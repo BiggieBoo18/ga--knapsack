@@ -1,1 +1,1 @@
-# ga-knapsack
+# GeneticAlgorithm
