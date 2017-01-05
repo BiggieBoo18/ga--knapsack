@@ -21,7 +21,7 @@ class Mutation(object):
             if (random.random()<self.probability):
                 for j in range(len(mutate_offspring[i].ind)):
                     if (random.random()<self.probability):
-                        print("<DEBUG> mute!")
+                        #print("<DEBUG> mute!")
                         while (True):
                             if (type(self.dataset[0])==list):
                                 m = random.choice(self.dataset[j])

@@ -28,7 +28,7 @@ def calcFit(args):
     for i in set(ind):
         indexes = [j for j, x in enumerate(ind) if x==i]
         gweight = sum([weight[j] for j in indexes])
-        # {!}許容量超えの時にその個体の適応度を調整する必要がある
+        # {!}許容量超えの時にはペナルティとして物体の全容量を加算
         loss    = AllowableAmount-gweight
         if (loss<0):
             loss += sum(weight)
@@ -39,17 +39,17 @@ def calcFit(args):
 def main():
     #引数の設定
     parser = argparse.ArgumentParser()
-    parser.add_argument('--revo  '   ,  dest='revo'         , type=int,   default=40,   help='revolution count>0')
-    parser.add_argument('--popcnt  ' ,  dest='popcnt'       , type=int,   default=300,  help='population count>0')
-    parser.add_argument('--maxormin  ', dest='maxormin'     , type=str,   default="min",help='max or min')
-    parser.add_argument('--esize  '  ,  dest='eliteSize'    , type=int,   default=1,    help='elite size>=0')
-    parser.add_argument('--tsize  '  ,  dest='tornSize'     , type=int,   default=2,    help='tornament size>=2')
-    parser.add_argument('--ctype  '  ,  dest='cross_type'   , type=str,   default="two",help='crossover type one or two or random')
-    parser.add_argument('--cprob  '  ,  dest='cross_prob'   , type=float, default=0.6,  help='crossover probability>=0.0')
-    parser.add_argument('--mprob  '  ,  dest='mutation_prob', type=float, default=0.05, help='mutation probability>=0.0')
-    parser.add_argument('--dataset  ',  dest='dataset'      , type=str,   default="",   help='dataset file path')
-    parser.add_argument('--dtype  '  ,  dest='dtype'        , type=str,   default="int",help='dataset type integer or float')
-    parser.add_argument('--graph  '  ,  dest='graph'        , type=int,   default=0,    help='show graph > 0')
+    parser.add_argument('--revo  '   ,  '-r ', dest='revo'         , type=int,   default=40,   help='revolution count>0')
+    parser.add_argument('--popcnt  ' ,  '-p ', dest='popcnt'       , type=int,   default=300,  help='population count>0')
+    parser.add_argument('--maxormin  ', '-m ', dest='maxormin'     , type=str,   default="min",help='max or min')
+    parser.add_argument('--esize  '  ,  '-e ', dest='eliteSize'    , type=int,   default=1,    help='elite size>=0')
+    parser.add_argument('--tsize  '  ,  '-s ', dest='tornSize'     , type=int,   default=2,    help='tornament size>=2')
+    parser.add_argument('--ctype  '  ,  '-x ', dest='cross_type'   , type=str,   default="two",help='crossover type one or two or random')
+    parser.add_argument('--cprob  '  ,  '-c ', dest='cross_prob'   , type=float, default=0.6,  help='crossover probability>=0.0')
+    parser.add_argument('--mprob  '  ,  '-u ', dest='mutation_prob', type=float, default=0.05, help='mutation probability>=0.0')
+    parser.add_argument('--dataset  ',  '-d ', dest='dataset'      , type=str,   default="",   help='dataset file path')
+    parser.add_argument('--dtype  '  ,  '-t ', dest='dtype'        , type=str,   default="int",help='dataset type integer or float')
+    parser.add_argument('--graph  '  ,  '-g ', dest='graph'        , type=int,   default=0,    help='show graph > 0')
 
     """
     setup argment
@@ -84,6 +84,7 @@ def main():
     AllowableAmount = weight[-1]
     del weight[-1]
     gene = len(dataset)
+
 
     """
     init population
@@ -143,12 +144,12 @@ def main():
             """
             
             offspring = select.SelectTornament(ppl)
-            print("<DEBUG>select is")
+            #print("<DEBUG>select is")
             #for j in range(len(offspring)):
                 #fit = offspring[j].CalcFitness(calcFit, offspring[j].ind)
                 #offspring[j].SetFitness(fit)
             
-            print PrintIndOfList(offspring)
+            #PrintIndOfList(offspring)
             """
             crossover from offspring
             """
@@ -165,8 +166,8 @@ def main():
             mutation from offspring
             """
             mutation_offspring = mut.Mutation(cross_offspring)
-            print("<DEBUG>mutation is")
-            PrintIndOfList(mutation_offspring)
+            #print("<DEBUG>mutation is")
+            #PrintIndOfList(mutation_offspring)
             for j in range(len(mutation_offspring)):
                 fit = mutation_offspring[j].CalcFitness(calcFit, (mutation_offspring[j].ind, weight, AllowableAmount))
                 mutation_offspring[j].SetFitness(fit)
@@ -196,13 +197,35 @@ def main():
                 plt.bar(left, height, align="center")
                 plt.show()
 
-
-    print "BestInd        :", GetBestIndOfPopulation(ppl)
+    bestInd = GetBestIndOfPopulation(ppl)
+    print "----------------"
+    print "入力            "
+    print "----------------"
+    print "各物体の重量と箱の許容量: "
+    for i in range(len(weight)):
+        print "物体{0}({1}g)".format(i+1,weight[i])
+    print "---------------"
+    print "出力            "
+    print "---------------"
+    print "BestInd        :", bestInd
     print "weight         :", weight
     print "AllowableAmount:", AllowableAmount
     print "BestFit        :", GetBestFitnessOfPopulation(ppl)
     print "WorstFit       :", GetWorstFitnessOfPopulation(ppl)
     print "AverageFit     :", GetAverageFitnessOfPopulation(ppl)
+    print "最適組合せ     :"
+    g = 0
+    for i in set(bestInd):
+        g += 1
+        print "Group{0}: ".format(g),
+        for j, x in enumerate(bestInd):
+            if (x==i):
+                print "物体{0}({1}g)".format(j+1,weight[j]),
+        print ""
+    print "箱の必要最小数 :", len(set(bestInd))
+    print "----------------"
+        
+        
     if (args.graph>0):
         plt.title("Fittness")
         p1 = plt.plot(count, bestfit , linewidth=2)
