@@ -29,8 +29,8 @@ def calcFit(args):
         indexes = [j for j, x in enumerate(ind) if x==i]
         gweight = sum([weight[j] for j in indexes])
         # {!}許容量超えの時にはペナルティとして物体の全容量を加算
-        loss    = AllowableAmount-gweight
-        if (loss<0):
+        loss    = (AllowableAmount-gweight)**2
+        if (loss<0 or loss>0):
             loss += sum(weight)
         fits.append(abs(loss))
 
