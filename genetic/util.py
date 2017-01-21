@@ -10,7 +10,7 @@ def PrepareDataset(path, dtype):
         dataset.append(dtype(tmp.strip("\r")))
     return (dataset)
 
-def PrepareDatasetAsDelimiter(path, dtype, delim):
+def PrepareDatasetByDelimiter(path, dtype, delim):
     fd = open(path, 'r')
     rawdata = fd.readlines()
     fd.close()

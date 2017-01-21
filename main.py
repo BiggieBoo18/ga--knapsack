@@ -16,6 +16,7 @@ from   genetic.select     import Select
 from   genetic.crossover  import Crossover
 from   genetic.mutation   import Mutation
 from   genetic.util       import *
+from   genetic.gpu        import *
 
 def calcFit(args):
     """
@@ -49,14 +50,15 @@ def main():
     parser.add_argument('--mprob  '  ,  '-u ', dest='mutation_prob', type=float, default=0.05, help='mutation probability>=0.0')
     parser.add_argument('--dataset  ',  '-d ', dest='dataset'      , type=str,   default="",   help='dataset file path')
     parser.add_argument('--dtype  '  ,  '-t ', dest='dtype'        , type=str,   default="int",help='dataset type integer or float')
-    parser.add_argument('--graph  '  ,  '-g ', dest='graph'        , type=int,   default=0,    help='show graph > 0')
+    parser.add_argument('--gpu  '  ,    '-g ', dest='gpu'          , type=int,   default=1    ,help='use gpu for calculate fitness')
+    parser.add_argument('--graph  '  ,  '-gr ', dest='graph'        , type=int,   default=0,    help='show graph > 0')
 
     """
     setup argment
     """
     args = parser.parse_args()
     if (args.revo         <0   or 
-        args.popcnt       <0   or 
+        args.popcnt       <3   or 
         args.maxormin    ==""  or
         args.eliteSize    <0   or 
         args.tornSize     <2   or 
@@ -64,6 +66,7 @@ def main():
         args.mutation_prob<0.0 or 
         args.dataset     == "" or
         args.dtype       == "" or
+        args.gpu          <0   or
         args.graph        <0):
         print("argment parse Error!")
         exit()
@@ -79,7 +82,7 @@ def main():
     """
     prepare dataset
     """
-    dataset, weight = PrepareDatasetAsDelimiter(path=args.dataset, dtype=int, delim=',')
+    dataset, weight = PrepareDatasetByDelimiter(path=args.dataset, dtype=int, delim=',')
     del dataset[-1]
     AllowableAmount = weight[-1]
     del weight[-1]
@@ -99,12 +102,15 @@ def main():
     for i in range(popcnt):
         ind = Individual(i+1)
         ind.CreateIndividual(life[i], 0)
-        fit = ind.CalcFitness(calcFit, (ind.ind, weight, AllowableAmount))
-        ind.SetFitness(fit)
+        if (args.gpu<=0):
+            fit = ind.CalcFitness(calcFit, (ind.ind, weight, AllowableAmount))
+            ind.SetFitness(fit)
         population.append(ind)
 
     ppl = Population()
     ppl.CreatePopulation(population)
+    if (args.gpu>0):
+        CalcFitness(ppl, weight, AllowableAmount, 0)
     ppl.SortInFitness(maxormin)
 
     select    = Select(eliteSize, tornSize)
@@ -169,8 +175,9 @@ def main():
             #print("<DEBUG>mutation is")
             #PrintIndOfList(mutation_offspring)
             for j in range(len(mutation_offspring)):
-                fit = mutation_offspring[j].CalcFitness(calcFit, (mutation_offspring[j].ind, weight, AllowableAmount))
-                mutation_offspring[j].SetFitness(fit)
+                if (args.gpu<=0):
+                    fit = mutation_offspring[j].CalcFitness(calcFit, (mutation_offspring[j].ind, weight, AllowableAmount))
+                    mutation_offspring[j].SetFitness(fit)
                 next_gene.append(mutation_offspring[j])
             #print("<DEBUG>next_gene is")
             #PrintIndOfList(next_gene)
@@ -179,6 +186,8 @@ def main():
         create new population
         """
         ppl.CreatePopulation(next_gene)
+        if (args.gpu>0):
+            CalcFitness(ppl, weight, AllowableAmount, eliteSize)
         ppl.SortInFitness(maxormin)
         #print("<DEBUG>ppl is")
         #PrintIndOfPopulation(ppl)
